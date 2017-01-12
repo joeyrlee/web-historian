@@ -36,30 +36,48 @@ exports.readListOfUrls = function(callback) {
 };
 
 exports.isUrlInList = function(target, callback) {
-  return fs.readFile(exports.paths.list, 'utf8', function(error, urls) {
+  fs.readFile(exports.paths.list, 'utf8', function(error, exist) {
     if (error) {
       console.log('error');
     } else {
-      //exists truthy test
-      var array = urls.split('\n');
-      return callback(error, _.contains(array, target));
+      var array = exist.split('\n');
+      callback(error, _.contains(array, target));
     }
   });
 };
 
 exports.addUrlToList = function(newURL, callback) {
-  fs.writeFile(exports.paths.list, function(error, urls) {
+  fs.writeFile(exports.paths.list, newURL, function(error, urls) {
     if (error) {
       console.log('error');
     } else {
-      console.log(urls.split('\n').push(newUrl));
-      callback(error, urls.split('\n').push(newUrl));
+      callback(error);
     }
   });
 };
 
-exports.isUrlArchived = function() {
+exports.isUrlArchived = function(newURL, callback) {
+  fs.readFile(`${exports.paths.archivedSites}/${newURL}`, 'utf8', function(err, exists) {
+    if (err) {
+      callback(null, false);
+    } else {
+      callback(null, true);
+    }    
+  });
 };
 
-exports.downloadUrls = function() {
+exports.downloadUrls = function(urlArray) {
+  urlArray.forEach(url => {
+    exports.isUrlArchived(url, function(err, exists) {
+      if (!exists) {
+        fs.writeFile(`${exports.paths.archivedSites}/${url}`, 'utf8', function(err) {
+          if (err) {
+            console.log(err);
+          } else {
+            console.log('Great job');
+          }
+        });
+      }
+    });
+  });
 };
