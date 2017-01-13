@@ -1,6 +1,9 @@
 var fs = require('fs');
 var path = require('path');
 var _ = require('underscore');
+var request = require('request');
+var stream = require('stream');
+// var cheerio = require('cheerio');
 
 /*
  * You will need to reuse the same paths many times over in the course of this sprint.
@@ -74,7 +77,7 @@ exports.downloadUrls = function(urlArray) {
           if (err) {
             console.log(err);
           } else {
-            console.log('Great job');
+            request('http://' + url).pipe(fs.createWriteStream(exports.paths.archivedSites + '/' + url));
           }
         });
       }

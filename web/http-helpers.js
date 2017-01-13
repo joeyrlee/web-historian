@@ -25,15 +25,9 @@ exports.serveAssets = function(res, asset, callback) {
       console.log('error');
     } else {
       var data = content;
-      //write to file
-      res.end(JSON.stringify(data));
+      res.end(data);
     }
   });
 };
-
-//collectData
-
-//makeActionHandler
-
 
 // As you progress, keep thinking about what helper functions you can put here!

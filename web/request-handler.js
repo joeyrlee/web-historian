@@ -26,28 +26,32 @@ exports.handleRequest = function (req, res) {
         });
       } else {
         res.writeHead(404, exports.headers);
+        archive.readListOfUrls(archive.downloadUrls);
         res.end();
       }
     });
   }
 
   if (req.method === 'POST') {
-    archive.isUrlInList(req.url, function(err, exists) {
-      if (!exists) {
-        var sentUrl = '';
-        req.on('data', function(chunk) {
-          sentUrl += chunk;
-        });
-        req.on('end', function() {
-          //sentUrl = JSON.parse(sentUrl);
-          sentUrl = sentUrl.slice(4);
+    var sentUrl;
+    req.on('data', function(chunk) {
+      sentUrl = JSON.parse(chunk.toString()).url;
+    });
+    req.on('end', function() {
+      console.log(sentUrl);
+      archive.isUrlInList(sentUrl, function(err, exists) {
+        if (!exists) {
           archive.addUrlToList(sentUrl + '\n', function(err) {
             res.writeHead(302, exports.headers);
+            archive.readListOfUrls(archive.downloadUrls);
+            var sentPath = archivedSites + '/' + sentUrl;
+            httpHelp.serveAssets(res, sentPath, function() {
+              console.log('something');
+            });
             res.end();
           });
-        });  
-      }
+        }
+      });
     });
-  } 
+  }
 };
-
