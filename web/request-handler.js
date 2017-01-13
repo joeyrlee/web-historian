@@ -4,28 +4,50 @@ var httpHelp = require('./http-helpers');
 var fs = require('fs');
 // require more modules/folders here!
 
-// var actions = {
-//   'GET': function(req, res) {
-//   },
-//   'OPTIONS': function(req, res) {
-//     //??
-//   },
-//   'POST': function(req, res) {
-
-//   }
-// };
-
 exports.handleRequest = function (req, res) {
-  //find the method from the request
-  //assign a callback for that specific method
-  //call the serveAssets function
-  // if (action) {
-  //   return action(req, res);
-  // } else {
-    //exports.sendResponse(res, '', 404);
-  // }
-  httpHelp.serveAssets(res, '/index.html', function() {
-    console.log('end');
-  });
+  siteAssets = archive.paths.siteAssets;
+  archivedSites = archive.paths.archivedSites;
+  list = archive.paths.list;
+  var filePath;
+  if (req.url === '/') {
+    //site assets
+    filePath = siteAssets + req.url + 'index.html';
+  } else {
+    //archivedSites
+    filePath = archivedSites + '/' + req.url;
+  }
+  
+  //req.url = /
+  if (req.method === 'GET') {
+    archive.isUrlArchived(req.url, function(err, exists) {
+      if (exists || req.url === '/') {
+        httpHelp.serveAssets(res, filePath, function() {
+          console.log('end');
+        });
+      } else {
+        res.writeHead(404, exports.headers);
+        res.end();
+      }
+    });
+  }
+
+  if (req.method === 'POST') {
+    archive.isUrlInList(req.url, function(err, exists) {
+      if (!exists) {
+        var sentUrl = '';
+        req.on('data', function(chunk) {
+          sentUrl += chunk;
+        });
+        req.on('end', function() {
+          //sentUrl = JSON.parse(sentUrl);
+          sentUrl = sentUrl.slice(4);
+          archive.addUrlToList(sentUrl + '\n', function(err) {
+            res.writeHead(302, exports.headers);
+            res.end();
+          });
+        });  
+      }
+    });
+  } 
 };
 

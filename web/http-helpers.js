@@ -18,11 +18,9 @@ exports.serveAssets = function(res, asset, callback) {
 
   //setting the head and editing the asset
   res.writeHead(200, exports.headers);
-  assetRead = archive.paths.siteAssets + asset;
-  assetSites = archive.paths.archivedSites;
-  assetList = archive.paths.list;
+
   //read the file
-  fs.readFile(assetRead, 'utf8', function(error, content) {
+  fs.readFile(asset, 'utf8', function(error, content) {
     if (error) {
       console.log('error');
     } else {
