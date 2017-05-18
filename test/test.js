@@ -82,12 +82,9 @@ describe('archive helpers', function() {
       var urlArray = ['example1.com', 'example2.com'];
       fs.writeFileSync(archive.paths.list, urlArray.join('\n'));
 
-      archive.readListOfUrls(function(err, urls) {
-        if (!err) {
-          expect(err).to.be.null;
-          expect(urls).to.deep.equal(urlArray);
-        }
-        done(err);
+      archive.readListOfUrls(function(urls) {
+        expect(urls).to.deep.equal(urlArray);
+        done();
       });
     });
   });
@@ -100,24 +97,14 @@ describe('archive helpers', function() {
       var counter = 0;
       var total = 2;
 
-      archive.isUrlInList('example1.com', function (err, exists) {
-        if (!err) {
-          expect(err).to.be.null;
-          expect(exists).to.be.true;
-          if (++counter === total) { done(); }
-        } else {
-          done(err);
-        }
+      archive.isUrlInList('example1.com', function (exists) {
+        expect(exists).to.be.true;
+        if (++counter === total) { done(); }
       });
 
-      archive.isUrlInList('gibberish', function (err, exists) {
-        if (!err) {
-          expect(err).to.be.null;
-          expect(exists).to.be.false;
-          if (++counter === total) { done(); }
-        } else {
-          done(err);
-        }
+      archive.isUrlInList('gibberish', function (exists) {
+        expect(exists).to.be.false;
+        if (++counter === total) { done(); }
       });
     });
   });
@@ -127,18 +114,11 @@ describe('archive helpers', function() {
       var urlArray = ['example1.com', 'example2.com\n'];
       fs.writeFileSync(archive.paths.list, urlArray.join('\n'));
 
-      archive.addUrlToList('someurl.com', function (err) {
-        if (!err) {
-          archive.isUrlInList('someurl.com', function (error, exists) {
-            if (!error) {
-              expect(error).to.be.null;
-              expect(exists).to.be.true;
-            }
-            done(error);
-          });
-        } else {
-          done(err);
-        }
+      archive.addUrlToList('someurl.com', function () {
+        archive.isUrlInList('someurl.com', function (exists) {
+          expect(exists).to.be.true;
+          done();
+        });
       });
     });
   });
@@ -150,25 +130,14 @@ describe('archive helpers', function() {
       var counter = 0;
       var total = 2;
 
-      archive.isUrlArchived('www.example.com', function (err, exists) {
-        if (!err) {
-          expect(err).to.be.null;
-          expect(exists).to.be.true;
-          if (++counter === total) { done(); }
-        } else {
-          done(err);
-        }
+      archive.isUrlArchived('www.example.com', function (exists) {
+        expect(exists).to.be.true;
+        if (++counter === total) { done(); }
       });
 
-      archive.isUrlArchived('www.notarchived.com', function (err, exists) {
-        if (!err) {
-          expect(err).to.be.null;
-          expect(exists).to.be.false;
-          if (++counter === total) { done(); }
-        } else {
-          done(err);
-        }
-
+      archive.isUrlArchived('www.notarchived.com', function (exists) {
+        expect(exists).to.be.false;
+        if (++counter === total) { done(); }
       });
     });
   });
@@ -186,4 +155,3 @@ describe('archive helpers', function() {
     });
   });
 });
-
