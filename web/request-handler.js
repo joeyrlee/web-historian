@@ -1,57 +1,63 @@
 var path = require('path');
 var archive = require('../helpers/archive-helpers');
-var httpHelp = require('./http-helpers');
-var fs = require('fs');
 // require more modules/folders here!
 
-exports.handleRequest = function (req, res) {
-  siteAssets = archive.paths.siteAssets;
-  archivedSites = archive.paths.archivedSites;
-  list = archive.paths.list;
-  var filePath;
-  if (req.url === '/') {
-    //site assets
-    filePath = siteAssets + req.url + 'index.html';
-  } else {
-    //archivedSites
-    filePath = archivedSites + '/' + req.url;
-  }
-  
-  //req.url = /
-  if (req.method === 'GET') {
-    archive.isUrlArchived(req.url, function(err, exists) {
-      if (exists || req.url === '/') {
-        httpHelp.serveAssets(res, filePath, function() {
-          console.log('end');
-        });
-      } else {
-        res.writeHead(404, exports.headers);
-        archive.readListOfUrls(archive.downloadUrls);
-        res.end();
-      }
-    });
-  }
+var url = require('url');
+var helpers = require('./http-helpers');
 
-  if (req.method === 'POST') {
-    var sentUrl;
-    req.on('data', function(chunk) {
-      sentUrl = JSON.parse(chunk.toString()).url;
+var actions = {
+  'GET': function(request, response) {
+    var urlPath = url.parse(request.url).pathname;
+
+    // / means index.html
+    if (urlPath === '/') { urlPath = '/index.html'; }
+
+    helpers.serveAssets(response, urlPath, function() {
+      // trim leading slash if present
+      if (urlPath[0] === '/') { urlPath = urlPath.slice(1); }
+
+      archive.isUrlInList(urlPath, function(found) {
+        if (found) {
+          helpers.sendRedirect(response, '/loading.html');
+        } else {
+          helpers.send404(response);
+        }
+      });
     });
-    req.on('end', function() {
-      console.log(sentUrl);
-      archive.isUrlInList(sentUrl, function(err, exists) {
-        if (!exists) {
-          archive.addUrlToList(sentUrl + '\n', function(err) {
-            res.writeHead(302, exports.headers);
-            archive.readListOfUrls(archive.downloadUrls);
-            var sentPath = archivedSites + '/' + sentUrl;
-            httpHelp.serveAssets(res, sentPath, function() {
-              console.log('something');
-            });
-            res.end();
+  },
+  'POST': function(request, response) {
+    helpers.collectData(request, function(data) {
+      var url = data.split('=')[1].replace('http://', '');
+      // check sites.txt for web site
+      archive.isUrlInList(url, function(found) {
+        if (found) { // found site
+          // check if site is on disk
+          archive.isUrlArchived(url, function(exists) {
+            if (exists) {
+              // redirect to site page (/www.google.com)
+              helpers.sendRedirect(response, '/' + url);
+            } else {
+              // Redirect to loading.html
+              helpers.sendRedirect(response, '/loading.html');
+            }
+          });
+        } else { // not found
+          // add to sites.txt
+          archive.addUrlToList(url, function() {
+            // Redirect to loading.html
+            helpers.sendRedirect(response, '/loading.html');
           });
         }
       });
     });
+  }
+};
+
+exports.handleRequest = function (req, res) {
+  var handler = actions[req.method];
+  if (handler) {
+    handler(req, res);
+  } else {
+    helpers.send404(response);
   }
 };
