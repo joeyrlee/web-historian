@@ -1,9 +1,7 @@
 var fs = require('fs');
 var path = require('path');
-var _ = require('underscore');
 var request = require('request');
-var stream = require('stream');
-// var cheerio = require('cheerio');
+var _ = require('underscore');
 
 /*
  * You will need to reuse the same paths many times over in the course of this sprint.
@@ -25,62 +23,43 @@ exports.initialize = function(pathsObj) {
   });
 };
 
-// The following function names are provided to you to suggest how you might
-// modularize your code. Keep it clean!
 
 exports.readListOfUrls = function(callback) {
-  fs.readFile(exports.paths.list, 'utf8', function(error, urls) {
-    if (error) {
-      console.log('error');
-    } else {
-      callback(error, urls.split('\n'));
+  fs.readFile(exports.paths.list, function(err, sites) {
+    sites = sites.toString().split('\n');
+    if (callback) {
+      callback(sites);
     }
   });
 };
 
-exports.isUrlInList = function(target, callback) {
-  fs.readFile(exports.paths.list, 'utf8', function(error, exist) {
-    if (error) {
-      console.log('error');
-    } else {
-      var array = exist.split('\n');
-      callback(error, _.contains(array, target));
-    }
-  });
-};
-
-exports.addUrlToList = function(newURL, callback) {
-  fs.writeFile(exports.paths.list, newURL, function(error, urls) {
-    if (error) {
-      console.log('error');
-    } else {
-      callback(error);
-    }
-  });
-};
-
-exports.isUrlArchived = function(newURL, callback) {
-  fs.readFile(`${exports.paths.archivedSites}/${newURL}`, 'utf8', function(err, exists) {
-    if (err) {
-      callback(null, false);
-    } else {
-      callback(null, true);
-    }    
-  });
-};
-
-exports.downloadUrls = function(urlArray) {
-  urlArray.forEach(url => {
-    exports.isUrlArchived(url, function(err, exists) {
-      if (!exists) {
-        fs.writeFile(`${exports.paths.archivedSites}/${url}`, 'utf8', function(err) {
-          if (err) {
-            console.log(err);
-          } else {
-            request('http://' + url).pipe(fs.createWriteStream(exports.paths.archivedSites + '/' + url));
-          }
-        });
-      }
+exports.isUrlInList = function(url, callback) {
+  exports.readListOfUrls(function(sites) {
+    var found = _.any(sites, function(site, i) {
+      return site.match(url);
     });
+    callback(found);
+  });
+};
+
+exports.addUrlToList = function(url, callback) {
+  fs.appendFile(exports.paths.list, url + '\n', function(err, file) {
+    callback();
+  });
+};
+
+exports.isUrlArchived = function(url, callback) {
+  var sitePath = path.join(exports.paths.archivedSites, url);
+
+  fs.exists(sitePath, function(exists) {
+    callback(exists);
+  });
+};
+
+exports.downloadUrls = function(urls) {
+  // Iterate over urls and pipe to new files
+  _.each(urls, function (url) {
+    if (!url) { return; }
+    request('http://' + url).pipe(fs.createWriteStream(exports.paths.archivedSites + '/' + url));
   });
 };
